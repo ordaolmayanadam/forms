@@ -55,6 +55,26 @@ class VoteMapper extends QBMapper {
 
         return $this->findEntities($qb);
 	}
+
+	/**
+	 * @param int $formId
+	 * @param string $userId
+	 * @throws \OCP\AppFramework\Db\DoesNotExistException if not found
+	 * @return Comment[]
+	 */
+	public function findByFormAndUser(int $formId, string $userId): array {
+		$qb = $this->db->getQueryBuilder();
+
+        $qb->select('*')
+           ->from($this->getTableName())
+           ->where(
+               $qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT))
+           )->andWhere(
+			$qb->expr()->eq('user_id', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR))
+		   );
+
+        return $this->findEntities($qb);
+	}
 	
 	/**
 	 * @param int $formId

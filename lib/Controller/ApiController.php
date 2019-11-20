@@ -226,7 +226,9 @@ class ApiController extends Controller {
 		return $votesList;
 	}
 	return NULL;
-}
+	}
+
+
 
 
 	/**

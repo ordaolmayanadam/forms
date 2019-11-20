@@ -1,5 +1,6 @@
 var form = []
 var questions = []
+var uservotes = []
 
 function sendDataToServer(survey) {
 	form.answers = survey.data;
@@ -34,9 +35,11 @@ function cssUpdate(survey, options){
 $(document).ready(function () {
 	var formJSON = $('#surveyContainer').attr('form')
 	var questionJSON = $('#surveyContainer').attr('questions')
+	var voteJSON = $('#surveyContainer').attr('uservotes')
 	
 	form = JSON.parse(formJSON)
 	questions = JSON.parse(questionJSON)
+	uservotes = JSON.parse(voteJSON)
 
 	var surveyJSON = { 
 		title: form.title,
@@ -49,7 +52,35 @@ $(document).ready(function () {
 		q.answers.forEach(a => {
 			ans.push(a.text);
 		});
-		surveyJSON.questions.push({type: q.type, name: q.text, choices: ans, isRequired: 'true'});
+
+		var voted = false;
+		var voteValue = "";
+		var voteValueArr = [];
+
+		if (form.unique === "1"){
+			uservotes.forEach(v => {
+				if (v.voteOptionId === q.id){
+					voted = true;
+					if (v.voteOptionType === "checkbox"){
+						voteValueArr.push(v.voteAnswer);
+					}else{
+						voteValue = v.voteAnswer;
+					}
+					
+				}
+			});
+		}
+
+		if (voted){
+			if (q.type === "checkbox"){
+				surveyJSON.questions.push({type: q.type, name: q.text, choices: ans, isRequired: 'true', defaultValue: voteValueArr});
+			}else{
+				surveyJSON.questions.push({type: q.type, name: q.text, choices: ans, isRequired: 'true', defaultValue: voteValue});
+			}			
+		}else{
+			surveyJSON.questions.push({type: q.type, name: q.text, choices: ans, isRequired: 'true'});
+		}
+		
 	});
 
 	$('#surveyContainer').Survey({

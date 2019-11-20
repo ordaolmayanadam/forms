@@ -275,8 +275,7 @@ class PageController extends Controller {
 
 		$votes = $this->voteMapper->findByForm($form->getId());
 		$participants = $this->voteMapper->findParticipantsByForm($form->getId());
-		$questions = $this->questionMapper->findByForm($form->getId());
-
+			
 		try {
 			$notification = $this->notificationMapper->findByUserAndForm($form->getId(), $this->userId);
 		} catch (DoesNotExistException $e) {
@@ -294,7 +293,8 @@ class PageController extends Controller {
 					'userId' => $this->userId,
 					'userMgr' => $this->userMgr,
 					'urlGenerator' => $this->urlGenerator,
-					'avatarManager' => $this->avatarManager
+					'avatarManager' => $this->avatarManager,
+					'userVotes' => $this->getUserVotes($form->getId(), $this->userId)
 			], $renderAs);
 			$csp = new ContentSecurityPolicy();
 			$csp->allowEvalScript(true);
@@ -320,6 +320,21 @@ class PageController extends Controller {
 			//handle silently
 		}finally{
 			return $questionList;
+		}
+	}
+
+	public function getUserVotes($formId, $userId) {
+		$voteList = array();
+		try{
+			$votes = $this->voteMapper->findByFormAndUser($formId, $userId);
+			foreach ($votes as $voteElement) {
+				$el = $voteElement->read();
+				$voteList[] = $el;
+			}
+		} catch (DoesNotExistException $e) {
+			//handle
+		} finally {
+			return $voteList;
 		}
 	}
 
@@ -376,6 +391,10 @@ class PageController extends Controller {
 		$count = 1;
 		$anonID = "anon-user-".  hash('md5', (time() + rand()));
 
+		if (!$form->getIsAnonymous() && $form->getUnique()){
+			$this->voteMapper->deleteByFormAndUser($id, $userId);
+		}
+
 		for ($i = 0; $i < $count_answers; $i++) {
 			if($questions[$i]['type'] == "checkbox"){
 				foreach (($answers[$questions[$i]['text']]) as $value) {
@@ -389,7 +408,7 @@ class PageController extends Controller {
 					}
 					$vote->setVoteOptionText(htmlspecialchars($questions[$i]['text']));
 					$vote->setVoteAnswer($value);
-					$vote->setVoteOptionId($count);
+					$vote->setVoteOptionId($questions[$i]['id']);
 					$vote->setVoteOptionType($questions[$i]['type']);
 					$this->voteMapper->insert($vote);
 				}
@@ -404,7 +423,7 @@ class PageController extends Controller {
 				}
 				$vote->setVoteOptionText(htmlspecialchars($questions[$i]['text']));
 				$vote->setVoteAnswer($answers[$questions[$i]['text']]);
-				$vote->setVoteOptionId($count++);
+				$vote->setVoteOptionId($questions[$i]['id']);
 				$vote->setVoteOptionType($questions[$i]['type']);
 				$this->voteMapper->insert($vote);
 			}
@@ -526,14 +545,7 @@ class PageController extends Controller {
 		if ($this->userId === null) {
 			return false;
 		}
-		if ($access === 'registered') {
-			if ($form->getUnique()) {
-				$participants = $this->voteMapper->findParticipantsByForm($form->getId());
-				foreach($participants as $participant) {
-					// Don't allow access if user has already taken part
-					if ($participant->getUserId() === $this->userId) return false;
-				}
-			}
+		if ($access === 'registered') {			
 			return true;
 		}
 		if ($owner === $this->userId) {

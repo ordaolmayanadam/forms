@@ -84,8 +84,8 @@
 						:key="question.id"
 						:question="question"
 						:type="question.type"
-						:add-answer="addAnswer"
-						:remove-answer="removeAnswer"
+						@add-answer="addAnswer"
+						@remove-answer="removeAnswer"
 						@remove="form.options.formQuizQuestions.splice(index, 1)"
 					/>
 				</transitionGroup>
@@ -125,7 +125,7 @@
 						{{ t('forms', 'Anonymous form') }}
 					</label>
 
-					<input id="unique" v-model="form.event.unique" :disabled="form.event.access !== 'registered' || form.event.isAnonymous"
+					<input id="unique" v-model="form.event.unique" :disabled="form.event.access === 'public' || form.event.isAnonymous"
 						type="checkbox" class="checkbox"
 					>
 					<label for="unique" class="title">

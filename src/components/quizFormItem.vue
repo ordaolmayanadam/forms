@@ -27,6 +27,7 @@
 				:placeholder=" t('forms', 'Add Answer')"
 				@keyup.enter="emitNewAnswer(question)"
 			>
+
 			<transitionGroup
 				id="form-list"
 				name="list"
